@@ -160,6 +160,10 @@
       font-family: inherit;
       cursor: pointer;
       transition: transform 160ms ease, border-color 160ms ease;
+      text-align: center;
+      text-decoration: none;
+      display: inline-flex;
+      justify-content: center;
     }
 
     button.primary {
@@ -174,12 +178,15 @@
       color: var(--error);
     }
 
-    button:disabled {
+    button:disabled,
+    .ghost-button.disabled {
       opacity: 0.45;
       cursor: not-allowed;
+      pointer-events: none;
     }
 
-    button:hover:not(:disabled) {
+    button:hover:not(:disabled),
+    .ghost-button:not(.disabled):hover {
       transform: translateY(-1px);
       border-color: var(--accent-strong);
     }
@@ -300,7 +307,7 @@
           <button id="flipCamera">Flip camera</button>
           <button id="recordBtn" class="primary" disabled>Start recording</button>
           <button id="stopRecordBtn" class="danger" disabled>Stop recording</button>
-          <button id="downloadRecording" class="ghost-button" disabled>Download clip</button>
+          <a id="downloadRecording" class="ghost-button disabled" role="button" aria-disabled="true">Download clip</a>
         </div>
         <p class="hint">
           Tip: keep Safari in full screen, reduce iPad brightness, and look slightly above the lens to mimic eye contact.
@@ -428,6 +435,18 @@ Remember to smile, slow down, and keep your energy up!</textarea>
       }
     };
 
+    const setDownloadEnabled = enabled => {
+      if (enabled) {
+        downloadBtn.classList.remove('disabled');
+        downloadBtn.setAttribute('aria-disabled', 'false');
+      } else {
+        downloadBtn.classList.add('disabled');
+        downloadBtn.setAttribute('aria-disabled', 'true');
+        downloadBtn.removeAttribute('href');
+        downloadBtn.removeAttribute('download');
+      }
+    };
+
     const stopTracks = () => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
@@ -513,7 +532,7 @@ Remember to smile, slow down, and keep your energy up!</textarea>
       };
       recorder.onstop = () => {
         if (!recordedChunks.length) {
-          downloadBtn.disabled = true;
+          setDownloadEnabled(false);
           return;
         }
         const blob = new Blob(recordedChunks, { type: mimeType || 'video/webm' });
@@ -521,7 +540,7 @@ Remember to smile, slow down, and keep your energy up!</textarea>
         downloadBtn.href = url;
         const extension = (mimeType && mimeType.includes('mp4')) ? 'mp4' : 'webm';
         downloadBtn.download = `teleprompter-${Date.now()}.${extension}`;
-        downloadBtn.disabled = false;
+        setDownloadEnabled(true);
         updateStatus('Ready to download');
       };
       recorder.start();
@@ -529,7 +548,7 @@ Remember to smile, slow down, and keep your energy up!</textarea>
       updateStatus('Recording', 'recording');
       recordBtn.disabled = true;
       stopRecordBtn.disabled = false;
-      downloadBtn.disabled = true;
+      setDownloadEnabled(false);
     });
 
     stopRecordBtn.addEventListener('click', () => {
@@ -539,11 +558,14 @@ Remember to smile, slow down, and keep your energy up!</textarea>
       stopTimer();
       recordBtn.disabled = false;
       stopRecordBtn.disabled = true;
+      setDownloadEnabled(false);
       updateStatus('Processing clip');
     });
 
     downloadBtn.addEventListener('click', () => {
-      updateStatus('Clip saved');
+      if (!downloadBtn.classList.contains('disabled')) {
+        updateStatus('Clip saved');
+      }
     });
 
     window.addEventListener('beforeunload', () => {

@@ -501,14 +501,11 @@ Remember to smile, slow down, and keep your energy up!</textarea>
 
     const pickMimeType = () => {
       const mp4 = 'video/mp4;codecs="h264,aac"';
-      const webm = 'video/webm;codecs=vp9,opus';
       if (MediaRecorder.isTypeSupported(mp4)) {
         return mp4;
       }
-      if (MediaRecorder.isTypeSupported(webm)) {
-        return webm;
-      }
-      return '';
+      alert('This browser cannot export MP4 recordings. Please update Safari/iPadOS to a version that supports MediaRecorder MP4 output.');
+      throw new Error('MP4 unsupported');
     };
 
     recordBtn.addEventListener('click', () => {
@@ -516,9 +513,13 @@ Remember to smile, slow down, and keep your energy up!</textarea>
         alert('Start the camera first.');
         return;
       }
-      mimeType = pickMimeType();
       try {
-        recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+        mimeType = pickMimeType();
+      } catch (err) {
+        return;
+      }
+      try {
+        recorder = new MediaRecorder(stream, { mimeType });
       } catch (err) {
         console.error(err);
         alert('Recording not supported in this browser.');
@@ -535,11 +536,10 @@ Remember to smile, slow down, and keep your energy up!</textarea>
           setDownloadEnabled(false);
           return;
         }
-        const blob = new Blob(recordedChunks, { type: mimeType || 'video/webm' });
+        const blob = new Blob(recordedChunks, { type: 'video/mp4' });
         const url = URL.createObjectURL(blob);
         downloadBtn.href = url;
-        const extension = (mimeType && mimeType.includes('mp4')) ? 'mp4' : 'webm';
-        downloadBtn.download = `teleprompter-${Date.now()}.${extension}`;
+        downloadBtn.download = `teleprompter-${Date.now()}.mp4`;
         setDownloadEnabled(true);
         updateStatus('Ready to download');
       };

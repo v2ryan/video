@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>iPad Teleprompter Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-start: #0f172a;
+      --bg-end: #1e1b4b;
+      --accent: #fcd34d;
+      --accent-strong: #fbbf24;
+      --text: #f8fafc;
+      --muted: #cbd5f5;
+      --card: rgba(15, 23, 42, 0.72);
+      --card-border: rgba(252, 211, 77, 0.2);
+      --error: #f87171;
+      --success: #34d399;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Space Grotesk", sans-serif;
+      background: radial-gradient(circle at top, var(--bg-start), var(--bg-end));
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 2.5rem 1.25rem;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(120deg, rgba(252, 211, 77, 0.07) 20%, transparent 20%),
+        linear-gradient(300deg, rgba(59, 130, 246, 0.08) 20%, transparent 20%);
+      background-size: 220px 220px;
+      opacity: 0.4;
+      z-index: 0;
+    }
+
+    .frame {
+      position: relative;
+      z-index: 1;
+      width: min(1100px, 100%);
+      padding: 2rem clamp(1rem, 3vw, 2.5rem);
+      border-radius: 1.75rem;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      box-shadow: 0 30px 60px rgba(8, 7, 21, 0.65);
+      backdrop-filter: blur(16px);
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-bottom: 2rem;
+    }
+
+    header small {
+      text-transform: uppercase;
+      letter-spacing: 0.35em;
+      color: var(--accent);
+      font-size: 0.8rem;
+    }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.4rem);
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 680px;
+      line-height: 1.55;
+    }
+
+    .studio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .panel {
+      background: rgba(8, 12, 24, 0.75);
+      border: 1px solid rgba(248, 250, 252, 0.12);
+      border-radius: 1.2rem;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .camera-preview {
+      position: relative;
+      border-radius: 1rem;
+      overflow: hidden;
+      background: #000;
+      min-height: 240px;
+    }
+
+    .camera-preview video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .badge {
+      padding: 0.2rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid rgba(248, 250, 252, 0.3);
+    }
+
+    .badge.recording {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+
+    button,
+    .ghost-button {
+      border: 1px solid rgba(248, 250, 252, 0.35);
+      background: rgba(248, 250, 252, 0.08);
+      color: var(--text);
+      font-weight: 600;
+      border-radius: 999px;
+      padding: 0.75rem 1rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #1f2937;
+      border-color: var(--accent);
+    }
+
+    button.danger {
+      background: rgba(248, 113, 113, 0.15);
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: var(--accent-strong);
+    }
+
+    .prompt-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 140px;
+      border-radius: 1rem;
+      border: 1px dashed rgba(248, 250, 252, 0.3);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text);
+      padding: 1rem;
+      resize: vertical;
+      font-size: 1rem;
+      font-family: inherit;
+      line-height: 1.5;
+    }
+
+    .teleprompter {
+      position: relative;
+      height: 320px;
+      border-radius: 1.2rem;
+      border: 1px solid rgba(248, 250, 252, 0.15);
+      background: rgba(4, 7, 17, 0.85);
+      overflow: hidden;
+      padding: 1.5rem;
+    }
+
+    .teleprompter-inner {
+      will-change: transform;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      font-size: 1.35rem;
+      line-height: 1.6;
+    }
+
+    .teleprompter p {
+      margin: 0;
+    }
+
+    .teleprompter.mirrored {
+      transform: scaleX(-1);
+    }
+
+    .teleprompter.mirrored .teleprompter-inner {
+      transform: scaleX(-1);
+    }
+
+    .prompt-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    footer {
+      margin-top: 2rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    @media (max-width: 720px) {
+      .teleprompter {
+        height: 260px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <header>
+      <small>iPad ready</small>
+      <h1>Teleprompter + Camera</h1>
+      <p class="subtitle">
+        Start the front camera, paste your talking points, and let the script glide while you record.
+        Everything runs in the browser so you can push this page to GitHub Pages and open it on the iPad.
+      </p>
+    </header>
+
+    <section class="studio-grid">
+      <article class="panel">
+        <h2>Camera + Recording</h2>
+        <div class="camera-preview">
+          <video id="cameraPreview" autoplay playsinline muted></video>
+        </div>
+        <div class="status-row">
+          <span>Timer: <strong id="timer">00:00</strong></span>
+          <span class="badge" id="statusBadge">Standby</span>
+        </div>
+        <div class="controls-grid">
+          <button id="startCamera" class="primary">Start camera</button>
+          <button id="flipCamera">Flip camera</button>
+          <button id="recordBtn" class="primary" disabled>Start recording</button>
+          <button id="stopRecordBtn" class="danger" disabled>Stop recording</button>
+          <button id="downloadRecording" class="ghost-button" disabled>Download clip</button>
+        </div>
+        <p class="hint">
+          Tip: keep Safari in full screen, reduce iPad brightness, and look slightly above the lens to mimic eye contact.
+        </p>
+      </article>
+
+      <article class="panel prompt-layout">
+        <h2>Teleprompter</h2>
+        <textarea id="scriptInput" spellcheck="false">Hey everyone,
+
+Thanks for tuning in today. I wanted to share a quick update straight from the iPad teleprompter I built.
+
+Remember to smile, slow down, and keep your energy up!</textarea>
+        <div class="teleprompter" id="teleprompter">
+          <div class="teleprompter-inner" id="teleprompterText"></div>
+        </div>
+        <div class="prompt-controls">
+          <button id="toggleScroll" class="primary">Play scroll</button>
+          <button id="resetScroll">Reset</button>
+          <button id="mirrorToggle">Mirror text</button>
+          <label>Speed
+            <input id="speed" type="range" min="0.3" max="4" step="0.1" value="1.4" />
+          </label>
+        </div>
+        <p class="hint">
+          Paste bullet points or a full script. Adjust the slider until the scroll pace matches how fast you speak.
+        </p>
+      </article>
+    </section>
+
+    <footer>Last refreshed: <span id="timestamp">—</span></footer>
+  </div>
+
+  <script>
+    const scriptInput = document.getElementById('scriptInput');
+    const teleprompter = document.getElementById('teleprompter');
+    const teleprompterText = document.getElementById('teleprompterText');
+    const toggleScrollBtn = document.getElementById('toggleScroll');
+    const resetScrollBtn = document.getElementById('resetScroll');
+    const mirrorToggleBtn = document.getElementById('mirrorToggle');
+    const speedInput = document.getElementById('speed');
+    const timestamp = document.getElementById('timestamp');
+
+    let scrollPosition = 0;
+    let isScrolling = false;
+    let lastFrameTime = 0;
+
+    const renderScript = () => {
+      const lines = scriptInput.value.trim().split(/\n+/).filter(Boolean);
+      teleprompterText.innerHTML = lines.map(line => `<p>${line}</p>`).join('');
+      scrollPosition = 0;
+      teleprompterText.style.transform = 'translateY(0)';
+    };
+
+    const animateScroll = time => {
+      if (isScrolling) {
+        if (lastFrameTime) {
+          const delta = time - lastFrameTime;
+          const pixelsPerFrame = parseFloat(speedInput.value) * (delta / 16);
+          scrollPosition += pixelsPerFrame;
+          const maxScroll = Math.max(0, teleprompterText.offsetHeight - teleprompter.offsetHeight);
+          if (scrollPosition >= maxScroll) {
+            scrollPosition = maxScroll;
+            isScrolling = false;
+            toggleScrollBtn.textContent = 'Play scroll';
+          }
+        }
+        teleprompterText.style.transform = `translateY(${-scrollPosition}px)`;
+      }
+      lastFrameTime = time;
+      requestAnimationFrame(animateScroll);
+    };
+
+    toggleScrollBtn.addEventListener('click', () => {
+      isScrolling = !isScrolling;
+      toggleScrollBtn.textContent = isScrolling ? 'Pause scroll' : 'Play scroll';
+      if (!isScrolling) {
+        lastFrameTime = 0;
+      }
+    });
+
+    resetScrollBtn.addEventListener('click', () => {
+      scrollPosition = 0;
+      teleprompterText.style.transform = 'translateY(0)';
+      isScrolling = false;
+      toggleScrollBtn.textContent = 'Play scroll';
+    });
+
+    mirrorToggleBtn.addEventListener('click', () => {
+      teleprompter.classList.toggle('mirrored');
+      mirrorToggleBtn.textContent = teleprompter.classList.contains('mirrored') ? 'Unmirror text' : 'Mirror text';
+    });
+
+    scriptInput.addEventListener('input', () => {
+      renderScript();
+    });
+
+    renderScript();
+    requestAnimationFrame(animateScroll);
+    timestamp.textContent = new Date().toLocaleString();
+
+    // Camera + recording setup
+    const preview = document.getElementById('cameraPreview');
+    const startCameraBtn = document.getElementById('startCamera');
+    const flipCameraBtn = document.getElementById('flipCamera');
+    const recordBtn = document.getElementById('recordBtn');
+    const stopRecordBtn = document.getElementById('stopRecordBtn');
+    const downloadBtn = document.getElementById('downloadRecording');
+    const statusBadge = document.getElementById('statusBadge');
+    const timerEl = document.getElementById('timer');
+
+    let stream;
+    let recorder;
+    let recordedChunks = [];
+    let facingMode = 'user';
+    let mimeType = '';
+    let timerInterval;
+    let startTime = null;
+
+    const updateStatus = (text, state) => {
+      statusBadge.textContent = text;
+      statusBadge.classList.remove('recording');
+      if (state === 'recording') {
+        statusBadge.classList.add('recording');
+      }
+    };
+
+    const stopTracks = () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+    };
+
+    const initCamera = async () => {
+      try {
+        stopTracks();
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode },
+          audio: true,
+        });
+        preview.srcObject = stream;
+        recordBtn.disabled = false;
+        flipCameraBtn.disabled = false;
+        updateStatus('Camera live');
+      } catch (err) {
+        console.error(err);
+        updateStatus('Camera blocked', 'error');
+        alert('Please allow camera + microphone access in Safari settings.');
+      }
+    };
+
+    const formatTime = ms => {
+      const total = Math.floor(ms / 1000);
+      const minutes = String(Math.floor(total / 60)).padStart(2, '0');
+      const seconds = String(total % 60).padStart(2, '0');
+      return `${minutes}:${seconds}`;
+    };
+
+    const startTimer = () => {
+      startTime = Date.now();
+      timerEl.textContent = '00:00';
+      timerInterval = setInterval(() => {
+        timerEl.textContent = formatTime(Date.now() - startTime);
+      }, 200);
+    };
+
+    const stopTimer = () => {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    };
+
+    startCameraBtn.addEventListener('click', initCamera);
+
+    flipCameraBtn.addEventListener('click', () => {
+      facingMode = facingMode === 'user' ? 'environment' : 'user';
+      initCamera();
+    });
+
+    const pickMimeType = () => {
+      const mp4 = 'video/mp4;codecs="h264,aac"';
+      const webm = 'video/webm;codecs=vp9,opus';
+      if (MediaRecorder.isTypeSupported(mp4)) {
+        return mp4;
+      }
+      if (MediaRecorder.isTypeSupported(webm)) {
+        return webm;
+      }
+      return '';
+    };
+
+    recordBtn.addEventListener('click', () => {
+      if (!stream) {
+        alert('Start the camera first.');
+        return;
+      }
+      mimeType = pickMimeType();
+      try {
+        recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      } catch (err) {
+        console.error(err);
+        alert('Recording not supported in this browser.');
+        return;
+      }
+      recordedChunks = [];
+      recorder.ondataavailable = e => {
+        if (e.data?.size) {
+          recordedChunks.push(e.data);
+        }
+      };
+      recorder.onstop = () => {
+        if (!recordedChunks.length) {
+          downloadBtn.disabled = true;
+          return;
+        }
+        const blob = new Blob(recordedChunks, { type: mimeType || 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        downloadBtn.href = url;
+        const extension = (mimeType && mimeType.includes('mp4')) ? 'mp4' : 'webm';
+        downloadBtn.download = `teleprompter-${Date.now()}.${extension}`;
+        downloadBtn.disabled = false;
+        updateStatus('Ready to download');
+      };
+      recorder.start();
+      startTimer();
+      updateStatus('Recording', 'recording');
+      recordBtn.disabled = true;
+      stopRecordBtn.disabled = false;
+      downloadBtn.disabled = true;
+    });
+
+    stopRecordBtn.addEventListener('click', () => {
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.stop();
+      }
+      stopTimer();
+      recordBtn.disabled = false;
+      stopRecordBtn.disabled = true;
+      updateStatus('Processing clip');
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      updateStatus('Clip saved');
+    });
+
+    window.addEventListener('beforeunload', () => {
+      stopTracks();
+    });
+  </script>
+</body>
+</html>

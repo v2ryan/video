@@ -192,7 +192,7 @@
 
     textarea {
       width: 100%;
-      min-height: 140px;
+      min-height: 200px;
       border-radius: 1rem;
       border: 1px dashed rgba(248, 250, 252, 0.3);
       background: rgba(15, 23, 42, 0.9);
@@ -206,7 +206,7 @@
 
     .teleprompter {
       position: relative;
-      height: 320px;
+      height: 420px;
       border-radius: 1.2rem;
       border: 1px solid rgba(248, 250, 252, 0.15);
       background: rgba(4, 7, 17, 0.85);
@@ -269,7 +269,7 @@
 
     @media (max-width: 720px) {
       .teleprompter {
-        height: 260px;
+        height: 300px;
       }
     }
   </style>
@@ -322,7 +322,7 @@ Remember to smile, slow down, and keep your energy up!</textarea>
           <button id="resetScroll">Reset</button>
           <button id="mirrorToggle">Mirror text</button>
           <label>Speed
-            <input id="speed" type="range" min="0.3" max="4" step="0.1" value="1.4" />
+            <input id="speed" type="range" min="0.1" max="4" step="0.1" value="1" />
           </label>
         </div>
         <p class="hint">
@@ -359,7 +359,7 @@ Remember to smile, slow down, and keep your energy up!</textarea>
       if (isScrolling) {
         if (lastFrameTime) {
           const delta = time - lastFrameTime;
-          const pixelsPerFrame = parseFloat(speedInput.value) * (delta / 16);
+          const pixelsPerFrame = parseFloat(speedInput.value) * 0.4 * (delta / 16);
           scrollPosition += pixelsPerFrame;
           const maxScroll = Math.max(0, teleprompterText.offsetHeight - teleprompter.offsetHeight);
           if (scrollPosition >= maxScroll) {
